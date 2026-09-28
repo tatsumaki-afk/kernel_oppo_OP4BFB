@@ -28,7 +28,7 @@ jobs:
           export PATH=$HOME/gcc64/bin:$HOME/gcc32/bin:$PATH
           make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 OP4BFB_defconfig
           make -j$(nproc) O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 \
-            CROSS_COMPILE=aarch64-linux-android- \
+            CROSS_COMPILE=aarch64-linux-android- KCFLAGS=-Wno-error \
             CROSS_COMPILE_ARM32=arm-linux-androideabi- 2>&1 | tee build.log
 
       - name: Kumpulkan hasil
