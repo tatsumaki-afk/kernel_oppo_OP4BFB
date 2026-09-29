@@ -1,0 +1,67 @@
+name: Build Kernel A11K KernelSU (OP4BFB)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Ambil source kernel
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Perbaiki include kernel-4.9
+        run: |
+          ln -sfn . kernel-4.9
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex build-essential libssl-dev libelf-dev cpio zip gcc-9 g++-9 python2
+
+      - name: Ambil compiler GCC 4.9
+        run: |
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 $HOME/gcc64
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 $HOME/gcc32
+
+      - name: Hilangkan -Werror paksa
+        run: |
+          grep -rlE -- '-Werror([-=][A-Za-z0-9_-]+)?' --include=Makefile . | xargs -r sed -i -E 's/-Werror([-=][A-Za-z0-9_-]+)?//g'
+
+      - name: Pasang KernelSU-Next (legacy)
+        run: |
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-legacy
+
+      - name: Compile kernel
+        run: |
+          set -o pipefail
+          export PATH=$HOME/gcc64/bin:$HOME/gcc32/bin:$PATH
+          make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 OP4BFB_defconfig
+          sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d;/CONFIG_CC_STACKPROTECTOR_REGULAR/d;/CONFIG_CC_STACKPROTECTOR_NONE/d' out/.config
+          echo "CONFIG_CC_STACKPROTECTOR_NONE=y" >> out/.config
+          sed -i '/# CONFIG_KPROBES is not set/d;/CONFIG_KALLSYMS_ALL/d' out/.config
+          echo "CONFIG_KPROBES=y" >> out/.config
+          echo "CONFIG_KALLSYMS_ALL=y" >> out/.config
+          echo "CONFIG_KSU=y" >> out/.config
+          yes "" | make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 CROSS_COMPILE=aarch64-linux-android- oldconfig || true
+          make -j$(nproc) O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 \
+            CROSS_COMPILE=aarch64-linux-android- KCFLAGS=-Wno-error \
+            CROSS_COMPILE_ARM32=arm-linux-androideabi- Image.gz-dtb 2>&1 | tee build.log
+
+      - name: Kumpulkan hasil
+        if: always()
+        run: |
+          mkdir -p hasil
+          ls -la out/arch/arm64/boot/ > hasil/isi-folder-boot.txt 2>&1 || true
+          cp out/arch/arm64/boot/Image.gz-dtb hasil/ 2>/dev/null || true
+          cp out/.config hasil/config-hasil 2>/dev/null || true
+          cp build.log hasil/ 2>/dev/null || true
+
+      - name: Upload hasil
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-a11k-ksu
+          path: hasil/*
