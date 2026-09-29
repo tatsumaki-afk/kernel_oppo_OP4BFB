@@ -34,7 +34,7 @@ jobs:
         run: |
           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
 
-      - name: Compile kernel
+      - name: Compile kernel (diagnosa - KPROBES dimatikan)
         run: |
           set -o pipefail
           export PATH=$HOME/gcc64/bin:$HOME/gcc32/bin:$PATH
@@ -42,9 +42,9 @@ jobs:
           sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d;/CONFIG_CC_STACKPROTECTOR_REGULAR/d;/CONFIG_CC_STACKPROTECTOR_NONE/d' out/.config
           echo "CONFIG_CC_STACKPROTECTOR_NONE=y" >> out/.config
           sed -i '/CONFIG_KPROBES/d;/CONFIG_HAVE_KPROBES/d;/CONFIG_KPROBE_EVENTS/d;/CONFIG_KSU/d' out/.config
-          echo "CONFIG_KPROBES=y" >> out/.config
-          echo "CONFIG_HAVE_KPROBES=y" >> out/.config
-          echo "CONFIG_KPROBE_EVENTS=y" >> out/.config
+          echo "# CONFIG_KPROBES is not set" >> out/.config
+          echo "# CONFIG_HAVE_KPROBES is not set" >> out/.config
+          echo "# CONFIG_KPROBE_EVENTS is not set" >> out/.config
           echo "CONFIG_KSU=y" >> out/.config
           yes "" | make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 CROSS_COMPILE=aarch64-linux-android- oldconfig || true
           make -j$(nproc) O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 \
@@ -64,5 +64,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kernel-a11k-ksu
+          name: kernel-a11k-ksu-nokprobe
           path: hasil/*
