@@ -12,6 +12,10 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Perbaiki include kernel-4.9
+        run: |
+          ln -sfn . kernel-4.9
+
       - name: Install tools
         run: |
           sudo apt-get update
