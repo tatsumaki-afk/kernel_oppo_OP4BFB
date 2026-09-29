@@ -24,7 +24,7 @@ jobs:
 
       - name: Hilangkan -Werror paksa
         run: |
-          grep -rlE -- '-Werror(=[A-Za-z0-9_-]+)?' --include=Makefile . | xargs -r sed -i -E 's/-Werror(=[A-Za-z0-9_-]+)?//g'
+          grep -rlE -- '-Werror([-=][A-Za-z0-9_-]+)?' --include=Makefile . | xargs -r sed -i -E 's/-Werror([-=][A-Za-z0-9_-]+)?//g'
 
       - name: Compile kernel
         run: |
@@ -43,4 +43,14 @@ jobs:
         run: |
           mkdir -p hasil
           ls -la out/arch/arm64/boot/ > hasil/isi-folder-boot.txt 2>&1 || true
-          cp out/
+          cp out/arch/arm64/boot/Image.gz-dtb hasil/ 2>/dev/null || true
+          cp out/arch/arm64/boot/dtbo.img hasil/ 2>/dev/null || true
+          cp out/.config hasil/config-hasil 2>/dev/null || true
+          cp build.log hasil/ 2>/dev/null || true
+
+      - name: Upload hasil
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-a11k
+          path: hasil/*
