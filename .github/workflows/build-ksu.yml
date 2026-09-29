@@ -30,9 +30,9 @@ jobs:
         run: |
           grep -rlE -- '-Werror([-=][A-Za-z0-9_-]+)?' --include=Makefile . | xargs -r sed -i -E 's/-Werror([-=][A-Za-z0-9_-]+)?//g'
 
-      - name: Pasang KernelSU-Next (legacy)
+      - name: Pasang KernelSU resmi v0.9.5
         run: |
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-legacy
+          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
 
       - name: Compile kernel
         run: |
@@ -41,9 +41,10 @@ jobs:
           make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 OP4BFB_defconfig
           sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d;/CONFIG_CC_STACKPROTECTOR_REGULAR/d;/CONFIG_CC_STACKPROTECTOR_NONE/d' out/.config
           echo "CONFIG_CC_STACKPROTECTOR_NONE=y" >> out/.config
-          sed -i '/# CONFIG_KPROBES is not set/d;/CONFIG_KALLSYMS_ALL/d' out/.config
+          sed -i '/CONFIG_KPROBES/d;/CONFIG_HAVE_KPROBES/d;/CONFIG_KPROBE_EVENTS/d;/CONFIG_KSU/d' out/.config
           echo "CONFIG_KPROBES=y" >> out/.config
-          echo "CONFIG_KALLSYMS_ALL=y" >> out/.config
+          echo "CONFIG_HAVE_KPROBES=y" >> out/.config
+          echo "CONFIG_KPROBE_EVENTS=y" >> out/.config
           echo "CONFIG_KSU=y" >> out/.config
           yes "" | make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 CROSS_COMPILE=aarch64-linux-android- oldconfig || true
           make -j$(nproc) O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 \
