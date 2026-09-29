@@ -31,7 +31,9 @@ jobs:
           set -o pipefail
           export PATH=$HOME/gcc64/bin:$HOME/gcc32/bin:$PATH
           make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 OP4BFB_defconfig
-          sed -i 's/^CONFIG_CC_STACKPROTECTOR_STRONG=y/CONFIG_CC_STACKPROTECTOR_REGULAR=y/' out/.config
+          sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d' out/.config
+          echo "CONFIG_CC_STACKPROTECTOR_REGULAR=y" >> out/.config
+          yes "" | make O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 CROSS_COMPILE=aarch64-linux-android- oldconfig
           make -j$(nproc) O=out ARCH=arm64 HOSTCC=gcc-9 HOSTCXX=g++-9 \
             CROSS_COMPILE=aarch64-linux-android- KCFLAGS=-Wno-error \
             CROSS_COMPILE_ARM32=arm-linux-androideabi- 2>&1 | tee build.log
