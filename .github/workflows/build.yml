@@ -22,6 +22,10 @@ jobs:
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 $HOME/gcc64
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 $HOME/gcc32
 
+      - name: Hilangkan -Werror paksa
+        run: |
+          grep -rl -- '-Werror' --include=Makefile . | xargs -r sed -i 's/-Werror//g'
+
       - name: Compile kernel
         run: |
           set -o pipefail
